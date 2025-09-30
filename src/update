@@ -1,0 +1,235 @@
+# -----------------------------
+# 1) Basics: Variablen & Datentypen
+# -----------------------------
+app_name = "Python Starter"
+version = 1.0
+active = True
+pi = 3.14159
+
+# Formatierte Ausgabe (f-Strings)
+print(f"🚀 {app_name} v{version} gestartet.\n")
+
+# -----------------------------
+# 2) Strings & einfache Funktionen
+# -----------------------------
+def greet(name: str) -> str:
+    """Gibt eine Begrüßung zurück."""
+    return f"Hallo, {name}! Willkommen im {app_name}."
+
+print(greet("Yannick"))
+
+# -----------------------------
+# 3) Kontrollfluss: if / elif / else
+# -----------------------------
+def classify_number(x: int) -> str:
+    if x < 0:
+        return "negativ"
+    elif x == 0:
+        return "null"
+    else:
+        return "positiv"
+
+print("Zahl 5 ist:", classify_number(5))
+
+# -----------------------------
+# 4) Listen, Sets, Dicts & Comprehensions
+# -----------------------------
+nums = [1, 2, 3, 4, 5]
+squares = [n*n for n in nums]              # List Comprehension
+evens = [n for n in nums if n % 2 == 0]    # gefiltert
+unique_set = set([1, 1, 2, 3])             # {1,2,3}
+
+user = {"name": "Yannick", "role": "learner", "stack": ["python", "sql"]}
+print("Squares:", squares)
+print("Gerade:", evens)
+print("Unique:", unique_set)
+print("User-Stack:", ", ".join(user["stack"]))
+
+# -----------------------------
+# 5) Schleifen
+# -----------------------------
+def sum_list(numbers: list[int]) -> int:
+    total = 0
+    for n in numbers:
+        total += n
+    return total
+
+print("Summe:", sum_list(nums))
+
+# -----------------------------
+# 6) Fehlerbehandlung (try/except)
+# -----------------------------
+def safe_div(a: float, b: float) -> float | None:
+    try:
+        return a / b
+    except ZeroDivisionError:
+        print("⚠️  Division durch 0 nicht erlaubt.")
+        return None
+
+print("10 / 2 =", safe_div(10, 2))
+print("10 / 0 =", safe_div(10, 0))
+
+# -----------------------------
+# 7) Dateien lesen/schreiben (simple Logs)
+# -----------------------------
+from datetime import datetime
+from pathlib import Path
+
+DATA_DIR = Path("./data")
+DATA_DIR.mkdir(exist_ok=True)
+LOG_FILE = DATA_DIR / "app.log"
+
+def log(msg: str) -> None:
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    LOG_FILE.write_text(
+        (LOG_FILE.read_text() if LOG_FILE.exists() else "") + f"[{timestamp}] {msg}\n",
+        encoding="utf-8",
+    )
+
+log("App gestartet")
+log("Erste Beispiele ausgeführt.")
+
+# -----------------------------
+# 8) Kleine Klasse (OOP-Grundlagen)
+# -----------------------------
+class Person:
+    def __init__(self, name: str, city: str | None = None):
+        self.name = name
+        self.city = city
+
+    def relocate(self, new_city: str) -> None:
+        self.city = new_city
+
+    def __repr__(self) -> str:
+        return f"Person(name={self.name!r}, city={self.city!r})"
+
+me = Person("Yannick", "Wien")
+me.relocate("Wien 17. Bezirk")
+print("Person-Objekt:", me)
+
+# -----------------------------
+# 9) Kleines CLI-Miniprojekt: Expense Tracker
+#    - Speichert Ausgaben im JSON-File
+#    - Aktionen: hinzufügen, auflisten, summe
+# -----------------------------
+import json
+
+EXP_FILE = DATA_DIR / "expenses.json"
+
+def load_expenses() -> list[dict]:
+    if EXP_FILE.exists():
+        return json.loads(EXP_FILE.read_text(encoding="utf-8"))
+    return []
+
+def save_expenses(items: list[dict]) -> None:
+    EXP_FILE.write_text(json.dumps(items, ensure_ascii=False, indent=2), encoding="utf-8")
+
+def add_expense(title: str, amount: float, category: str = "Sonstiges") -> None:
+    data = load_expenses()
+    entry = {
+        "title": title,
+        "amount": round(float(amount), 2),
+        "category": category,
+        "created_at": datetime.now().isoformat(timespec="seconds"),
+    }
+    data.append(entry)
+    save_expenses(data)
+    print(f"✅ Ausgabe hinzugefügt: {entry['title']} ({entry['amount']} €)")
+
+def list_expenses(category: str | None = None) -> None:
+    data = load_expenses()
+    if category:
+        data = [x for x in data if x["category"].lower() == category.lower()]
+        print(f"📄 Ausgaben in Kategorie '{category}':")
+    else:
+        print("📄 Alle Ausgaben:")
+
+    if not data:
+        print("  (keine Einträge)")
+        return
+
+    for i, x in enumerate(data, start=1):
+        print(f"  {i:02d}. {x['title']:20s} {x['amount']:>7.2f} €  [{x['category']}]  {x['created_at']}")
+
+def total_expenses(category: str | None = None) -> float:
+    data = load_expenses()
+    if category:
+        data = [x for x in data if x["category"].lower() == category.lower()]
+    s = sum(x["amount"] for x in data)
+    print(f"💰 Summe{' ('+category+')' if category else ''}: {s:.2f} €")
+    return s
+
+# -----------------------------
+# 10) Mini-„Tests“ (ohne pytest) – schnelle Selbstchecks
+# -----------------------------
+def _run_quick_tests():
+    assert classify_number(-1) == "negativ"
+    assert classify_number(0) == "null"
+    assert classify_number(3) == "positiv"
+    assert sum_list([1, 2, 3]) == 6
+    assert safe_div(4, 2) == 2
+    assert safe_div(4, 0) is None
+    print("✅ Quick-Tests bestanden.\n")
+
+# -----------------------------
+# 11) Einfaches Menü (CLI)
+# -----------------------------
+MENU = """
+=============================
+   PY STARTER – MINI-MENÜ
+=============================
+[1] Beispiel-Funktionen ausführen (Tests)
+[2] Ausgabe hinzufügen
+[3] Ausgaben auflisten (alle)
+[4] Ausgaben auflisten (Kategorie)
+[5] Summe berechnen (alle)
+[6] Summe berechnen (Kategorie)
+[0] Beenden
+"""
+
+def run_cli():
+    while True:
+        print(MENU)
+        choice = input("Auswahl: ").strip()
+
+        if choice == "1":
+            _run_quick_tests()
+
+        elif choice == "2":
+            title = input("Titel: ").strip()
+            amount_raw = input("Betrag (€): ").strip().replace(",", ".")
+            category = input("Kategorie (Enter = Sonstiges): ").strip() or "Sonstiges"
+
+            try:
+                amount = float(amount_raw)
+                add_expense(title, amount, category)
+            except ValueError:
+                print("⚠️  Ungültiger Betrag.")
+
+        elif choice == "3":
+            list_expenses()
+
+        elif choice == "4":
+            cat = input("Kategorie: ").strip()
+            list_expenses(cat)
+
+        elif choice == "5":
+            total_expenses()
+
+        elif choice == "6":
+            cat = input("Kategorie: ").strip()
+            total_expenses(cat)
+
+        elif choice == "0":
+            print("👋 Tschüss!")
+            break
+
+        else:
+            print("Unbekannte Auswahl. Bitte 0–6 eingeben.")
+
+# -----------------------------
+# 12) Einstiegspunkt
+# -----------------------------
+if __name__ == "__main__":
+    # Starte direkt ins Menü. (Für schnelle Demos oder automatisierte Runs kann man hier auch Tests ausführen.)
+    run_cli()
